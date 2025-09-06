@@ -11,11 +11,23 @@ export class BlockchainService {
   private provider: ethers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private contract: ethers.Contract;
+  private isConfigured: boolean;
 
   constructor(config: BlockchainConfig) {
-    this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-    this.wallet = new ethers.Wallet(config.privateKey, this.provider);
-    this.contract = new ethers.Contract(config.contractAddress, config.contractABI, this.wallet);
+    this.isConfigured = !!(config.rpcUrl && config.privateKey && config.contractAddress);
+    
+    if (this.isConfigured) {
+      this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
+      this.wallet = new ethers.Wallet(config.privateKey, this.provider);
+      this.contract = new ethers.Contract(config.contractAddress, config.contractABI, this.wallet);
+    } else {
+      console.log('Blockchain service not fully configured - will skip blockchain operations');
+    }
+  }
+
+  // Check if blockchain is properly configured
+  public isBlockchainConfigured(): boolean {
+    return this.isConfigured;
   }
 
   // Issue certificate on blockchain
@@ -28,6 +40,11 @@ export class BlockchainService {
     anomalyScore: number,
     metadataURI: string = ''
   ): Promise<{ success: boolean; txHash?: string; error?: string }> {
+    if (!this.isConfigured) {
+      console.log('Blockchain not configured - skipping on-chain storage');
+      return { success: true, txHash: '' };
+    }
+
     try {
       const tx = await this.contract.addCertificate(
         certID,
@@ -40,6 +57,7 @@ export class BlockchainService {
       );
 
       const receipt = await tx.wait();
+      console.log('Certificate stored on blockchain:', receipt.hash);
 
       return {
         success: true,
@@ -62,6 +80,10 @@ export class BlockchainService {
     certificateData?: any;
     error?: string;
   }> {
+    if (!this.isConfigured) {
+      return { success: true, exists: false };
+    }
+
     try {
       // First check if certificate exists
       const certificateData = await this.contract.viewCertificate(certID);

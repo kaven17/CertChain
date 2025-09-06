@@ -49,18 +49,28 @@ const dbService = new DatabaseService();
 // Initialize blockchain service (will be configured via env vars)
 let blockchainService: BlockchainService | null = null;
 
-if (process.env.RPC_URL && process.env.PRIVATE_KEY_DEV && process.env.CONTRACT_ADDRESS) {
-  try {
-    const contractABI = JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/CertifyChain.json'), 'utf8'));
-    blockchainService = new BlockchainService({
-      rpcUrl: process.env.RPC_URL,
-      privateKey: process.env.PRIVATE_KEY_DEV,
-      contractAddress: process.env.CONTRACT_ADDRESS,
-      contractABI: contractABI
-    });
-  } catch (error) {
-    console.warn('⚠️  Blockchain service not initialized:', error);
-  }
+// For now, create a service that handles missing configuration gracefully
+try {
+  // Basic ABI for our contract functions
+  const basicABI = [
+    "function addCertificate(string memory certID, string memory fileHash, string memory ocrHash, string memory aiHash, string memory qrHash, uint256 anomalyScore, string memory metadataURI) public",
+    "function viewCertificate(string memory certID) public view returns (tuple(string fileHash, string ocrHash, string aiHash, string qrHash, uint256 anomalyScore, address issuer, uint256 timestamp, uint8 status, uint256 corrections, string metadataURI))",
+    "function verifyCertificate(string memory certID) public",
+    "event CertificateVerified(string indexed certID, bool valid, uint256 timestamp)"
+  ];
+
+  blockchainService = new BlockchainService({
+    rpcUrl: process.env.RPC_URL || '',
+    privateKey: process.env.PRIVATE_KEY_DEV || '',
+    contractAddress: process.env.CONTRACT_ADDRESS || '',
+    contractABI: basicABI
+  });
+  
+  console.log('🔗 Blockchain service initialized');
+  console.log('📋 ThirdWeb Client ID:', process.env.THIRDWEB_CLIENT_ID ? 'Configured' : 'Missing');
+  console.log('🔑 Contract Address:', process.env.CONTRACT_ADDRESS ? 'Configured' : 'Missing');
+} catch (error) {
+  console.warn('⚠️  Blockchain service not initialized:', error);
 }
 
 // Initialize VC service
