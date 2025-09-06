@@ -1,0 +1,147 @@
+🎯 CertifyChain MVP (2 Weeks)
+Goal
+
+Deliver an end-to-end demoable MVP:
+Faculty uploads certificate → OCR extracts + hashes → AI flags → anchor stored on-chain → verifier checks certificate validity.
+Focus on provable working features, not roadmap promises.
+
+Tech Stack
+
+Blockchain: Solidity + Hardhat, OpenZeppelin, Sepolia/Mumbai testnet
+
+Backend: Node.js + Express + ethers.js + SQLite/Postgres (SQLite fine for MVP)
+
+Frontend: Next.js + Tailwind + Metamask (Thirdweb optional)
+
+OCR: Tesseract.js (Node)
+
+AI (MVP): Rule-based anomaly scoring
+
+Storage: Only hashes on-chain; DB stores OCR + VC JSON
+
+Core Features (MVP)
+Smart Contract (CertifyChainV2.sol)
+
+issueCertificate(anchorHash, student, anomalyScore)
+
+verifyCertificate(certId)
+
+Emit CertificateIssued event
+
+✅ Acceptance test: Deploy on Sepolia, call issueCertificate, confirm event + stored data via hardhat console.
+
+Backend (Express.js)
+
+POST /issue
+
+Input: file + student wallet
+
+OCR → extract text → hash (SHA256)
+
+AI → assign anomalyScore (simple rules)
+
+Create VC JSON, hash it, call contract → store record in DB
+
+Return {id, txHash, vcJson}
+
+GET /verify/:id
+
+Check DB + contract hash match
+
+Return {verified: true|false, anomaly: true|false}
+
+GET /view/:id
+
+Return OCR text, VC JSON, txHash
+
+✅ Acceptance test: Upload a file → get back id, txHash. /verify/:id returns verified=true.
+
+Frontend (Next.js + Tailwind)
+
+/issue → form upload + preview OCR → “Issue” button signs with wallet → calls backend
+
+/verify → input certID → show verified or flagged
+
+/view → show cert details + txHash
+
+✅ Acceptance test: Issuer logs in with Metamask → issues a cert → employer pastes certID → sees valid/invalid result.
+
+OCR (Tesseract.js)
+
+Enforce clear scans (300 DPI)
+
+Return text + confidence scores
+
+✅ Acceptance test: OCR returns student name + institution with ≥80% confidence, else allow manual override.
+
+AI (Rule-Based)
+
+If same student issued >N certs in T minutes → anomalyScore=80
+
+If OCR name ≠ input name → anomalyScore=80
+
+Else anomalyScore=10
+
+✅ Acceptance test: Upload mismatched name → anomaly flagged.
+
+Minimal Verifiable Credential (off-chain)
+
+Generate VC JSON per W3C model v2
+
+Sign with issuer private key (dev: JSON Web Signature)
+
+Store hash on-chain; VC JSON in DB
+
+✅ Acceptance test: /issue returns VC JSON + txHash; VC hash matches on-chain anchor.
+
+Privacy & Trust
+
+On-chain: only anchorHash
+
+Off-chain: DB holds OCR + VC JSON
+
+Issuer allowlist: simple JSON file with issuer wallet addresses
+
+Timeline (14 Days)
+
+Day 1–2: Finalize contract + deploy to Sepolia
+
+Day 3–5: Backend skeleton + OCR + AI stubs
+
+Day 6–8: Integrate contract calls + DB storage
+
+Day 9–11: Frontend pages + wallet login
+
+Day 12: Add VC JSON signing + /verify endpoint
+
+Day 13: End-to-end test + bugfix
+
+Day 14: Polish UI + demo script
+
+Demo Flow
+
+Issuer logs in with Metamask → uploads certificate
+
+OCR extracts + hashes → anomaly score computed
+
+Smart contract stores anchorHash on Sepolia
+
+Verifier enters certID → sees “Verified + Valid” or “Flagged”
+
+Actionable Checklist
+
+ .env.example with RPC_URL, PRIVATE_KEY_DEV, ISSUER_ALLOWLIST
+
+ contracts/CertifyChainV2.sol + deploy script
+
+ backend/app.js with /issue, /verify/:id, /view/:id
+
+ backend/ocr.js with Tesseract.js integration
+
+ backend/ai.js with simple rules
+
+ frontend/pages/issue.tsx, verify.tsx, view.tsx
+
+ Demo script + sample cert images
+
+ README with run steps
