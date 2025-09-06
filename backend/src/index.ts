@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import certificateRoutes from "./routes/certificate.routes";
+import adminRoutes from "./routes/admin.routes";
 import { DatabaseService } from "./database";
 
 dotenv.config();
@@ -43,6 +44,9 @@ app.get('/health', (req, res) => {
 
 // Certificate routes
 app.use("/api", certificateRoutes);
+
+// Admin routes
+app.use("/api/admin", adminRoutes);
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
