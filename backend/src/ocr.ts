@@ -49,26 +49,32 @@ export class OCRService {
   // Extract key information from certificate text
   extractCertificateInfo(ocrResult: OCRResult): {
     studentName: string | null;
+    rollNumber: string | null;
     institution: string | null;
     course: string | null;
     grade: string | null;
     issueDate: string | null;
+    certificateID: string | null;
   } {
     const text = ocrResult.text.toLowerCase();
     
-    // Simple pattern matching - can be enhanced with more sophisticated NLP
-    const studentNameMatch = text.match(/(?:name|student|recipient)[:\s]*([\w\s]+)/i);
-    const institutionMatch = text.match(/(?:university|college|institute|school)[:\s]*([\w\s]+)/i);
-    const courseMatch = text.match(/(?:course|program|degree|diploma)[:\s]*([\w\s]+)/i);
-    const gradeMatch = text.match(/(?:grade|result|score)[:\s]*([\w\+\-]+)/i);
-    const dateMatch = text.match(/(?:date|issued)[:\s]*([\d\/\-\.]+)/i);
+    // Enhanced pattern matching for better extraction
+    const studentNameMatch = text.match(/(?:name|student|recipient|candidate)[:\s-]*([\w\s\.]+?)(?:\n|roll|id|course)/i);
+    const rollNumberMatch = text.match(/(?:roll|registration|reg|id)[:\s#-]*([a-zA-Z0-9\/\-]+)/i);
+    const institutionMatch = text.match(/(?:university|college|institute|school|academy)[:\s]*([\w\s&\.]+?)(?:\n|course|department)/i);
+    const courseMatch = text.match(/(?:course|program|degree|diploma|bachelor|master|b\.tech|m\.tech|mba|bba)[:\s]*([\w\s\.\,\&]+?)(?:\n|grade|result|date)/i);
+    const gradeMatch = text.match(/(?:grade|result|score|cgpa|percentage|marks)[:\s]*([a-zA-Z0-9\+\-\.%\s]+?)(?:\n|date|issued)/i);
+    const dateMatch = text.match(/(?:date|issued|awarded)[:\s]*([\d]{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i);
+    const certificateIDMatch = text.match(/(?:certificate|cert|id|number|no)[:\s#]*([a-zA-Z0-9\/\-]+)/i);
 
     return {
-      studentName: studentNameMatch ? studentNameMatch[1].trim() : null,
-      institution: institutionMatch ? institutionMatch[1].trim() : null,
-      course: courseMatch ? courseMatch[1].trim() : null,
+      studentName: studentNameMatch ? studentNameMatch[1].trim().replace(/\s+/g, ' ') : null,
+      rollNumber: rollNumberMatch ? rollNumberMatch[1].trim() : null,
+      institution: institutionMatch ? institutionMatch[1].trim().replace(/\s+/g, ' ') : null,
+      course: courseMatch ? courseMatch[1].trim().replace(/\s+/g, ' ') : null,
       grade: gradeMatch ? gradeMatch[1].trim() : null,
       issueDate: dateMatch ? dateMatch[1].trim() : null,
+      certificateID: certificateIDMatch ? certificateIDMatch[1].trim() : null,
     };
   }
 
